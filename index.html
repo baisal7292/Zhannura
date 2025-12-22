@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Весёлое распределение на команды</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:'Comic Sans MS','Segoe UI',sans-serif;
+  background:linear-gradient(135deg,#ffe29f,#a1ffce);
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow-x:hidden;
+  overflow-y:auto;
+  padding:20px;
+}
+.board{
+  text-align:center;
+  background:white;
+  padding:40px;
+  border-radius:30px;
+  box-shadow:0 20px 40px rgba(0,0,0,.2);
+  width:90%;
+  max-width:900px;
+}
+h1{font-size:42px;margin-bottom:10px}
+.hint{font-size:18px;margin-bottom:25px}
+
+.button{
+  background:#fff;
+  border-radius:50%;
+  width:220px;
+  height:220px;
+  margin:0 auto;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  box-shadow:0 15px 30px rgba(0,0,0,.25);
+  transition:.15s;
+  user-select:none;
+}
+.button:active{transform:scale(.92)}
+.emoji{font-size:90px}
+.button-text{font-size:26px}
+
+.result{
+  margin-top:25px;
+  font-size:36px;
+  min-height:60px;
+}
+.pop{
+  animation:pop .4s ease;
+}
+@keyframes pop{
+  0%{transform:scale(.6);opacity:0}
+  100%{transform:scale(1);opacity:1}
+}
+
+.counts{
+  margin-top:10px;
+  font-size:16px;
+}
+
+.controls{
+  margin-top:15px;
+}
+button{
+  padding:8px 14px;
+  border-radius:12px;
+  border:none;
+  cursor:pointer;
+  margin:0 5px;
+  font-size:14px;
+}
+
+.reflection-page{
+  display:none;
+  text-align:center;
+  background:white;
+  padding:40px;
+  border-radius:30px;
+  box-shadow:0 20px 40px rgba(0,0,0,.2);
+  width:90%;
+  max-width:900px;
+}
+.reflection-page.active{display:block}
+.reflection-page h2{font-size:32px;margin-bottom:20px}
+
+.emoji-buttons{display:flex;gap:30px;justify-content:center;margin:25px 0;flex-wrap:wrap}
+.mood-card{
+  border:none;
+  background:transparent;
+  padding:0;
+  min-width:auto;
+  cursor:pointer;
+}
+.video-box{
+  width:200px;
+  height:220px;
+  border-radius:20px;
+  overflow:hidden;
+  border:4px solid #ddd;
+  transition:.2s;
+  position:relative;
+  background:#000;
+}
+.video-box video{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+.mood-card.selected .video-box{
+  border-color:#ffd700;
+  transform:scale(1.05);
+  box-shadow:0 8px 20px rgba(255,215,0,0.4);
+}
+.mood-label{
+  margin-top:15px;
+  padding:10px 20px;
+  border-radius:25px;
+  border:none;
+  font-size:16px;
+  font-weight:bold;
+  cursor:pointer;
+  transition:.2s;
+  width:100%;
+}
+.green-label{background:#a8e6cf;color:#2d5016}
+.yellow-label{background:#ffd93d;color:#6b4e00}
+.red-label{background:#ff8787;color:#8b0000}
+.mood-card.selected + .mood-label{
+  transform:scale(1.05);
+  box-shadow:0 4px 12px rgba(0,0,0,0.2);
+}
+
+.stats-box{
+  background:#f0f0f0;
+  padding:20px;
+  border-radius:15px;
+  margin:20px 0;
+  font-size:18px;
+}
+.stats-box h3{margin-top:0;font-size:22px}
+.stat-item{
+  margin:10px 0;
+  font-weight:bold;
+}
+.name-list{
+  font-size:14px;
+  margin:5px 0 15px 0;
+  font-weight:normal;
+  line-height:1.6;
+}
+
+textarea{
+  width:100%;
+  min-height:120px;
+  padding:15px;
+  font-size:16px;
+  border-radius:15px;
+  border:2px solid #ddd;
+  font-family:inherit;
+  margin-top:15px;
+  resize:vertical;
+}
+.submit-btn{
+  background:linear-gradient(135deg,#667eea,#764ba2);
+  color:white;
+  padding:15px 40px;
+  font-size:20px;
+  border-radius:20px;
+  margin-top:20px;
+  font-weight:bold;
+  transition:.2s;
+  border:none;
+  cursor:pointer;
+}
+.submit-btn:hover{transform:translateY(-2px);box-shadow:0 10px 20px rgba(0,0,0,.2)}
+.submit-btn:disabled{opacity:0.6;cursor:not-allowed}
+.back-btn{
+  background:#f0f0f0;
+  padding:10px 20px;
+  margin-top:15px;
+}
+.thank-you{
+  font-size:24px;
+  color:#4caf50;
+  margin-top:20px;
+  display:none;
+}
+
+canvas{
+  position:fixed;
+  top:0;
+  left:0;
+  pointer-events:none;
+  z-index:9999;
+}
+
+.current-student{
+  font-size:32px;
+  color:#667eea;
+  font-weight:bold;
+  margin:20px 0;
+  padding:15px;
+  background:linear-gradient(135deg,#667eea15,#764ba215);
+  border-radius:15px;
+}
+</style>
+</head>
+
+<body>
+<canvas id="confetti"></canvas>
+
+<div class="board" id="mainBoard">
+  <h1>Нажми и узнай команду!</h1>
+  <div class="hint">👆 19 учеников → группы будут ровные</div>
+  
+  <div class="current-student" id="currentTeamStudent" style="font-size:28px;margin-bottom:20px">Заңғар</div>
+
+  <div class="button" id="bigBtn">
+    <div class="emoji">🎲</div>
+    <div class="button-text">НАЖМИ</div>
+  </div>
+
+  <div class="result" id="result"></div>
+  <div class="counts" id="counts"></div>
+
+  <div class="controls">
+    <button id="resetBtn">🔄 Сброс</button>
+    <button id="muteBtn">🔈 Звук</button>
+    <button id="reflectionBtn">💭 Рефлексия</button>
+  </div>
+</div>
+
+<div class="reflection-page" id="reflectionPage">
+  <h2>Рефлексия 🌟</h2>
+  <div class="current-student" id="currentStudentName">Заңғар</div>
+  
+  <p style="font-size:20px;margin-bottom:25px;font-weight:bold">Тебе понятно новая тема "Падежи существительных"?
+    
+  </p>
+  
+  <div class="emoji-buttons" id="emojiButtons">
+    <div style="text-align:center">
+      <button class="mood-card" data-mood="понятно" title="Всё понятно">
+        <div class="video-box" style="background:#a8e6cf">
+          <video id="video1" muted loop>
+            <source src="IMG_8102.MP4" type="video/mp4">
+          </video>
+        </div>
+      </button>
+      <button class="mood-label green-label">Все понятно</button>
+    </div>
+    <div style="text-align:center">
+      <button class="mood-card" data-mood="вопросы" title="Есть вопросы">
+        <div class="video-box" style="background:#ffd93d">
+          <video id="video2" muted loop>
+            <source src="IMG_8105.MP4" type="video/mp4">
+          </video>
+        </div>
+      </button>
+      <button class="mood-label yellow-label">Есть вопросы</button>
+    </div>
+    <div style="text-align:center">
+      <button class="mood-card" data-mood="непонятно" title="Непонятно">
+        <div class="video-box" style="background:#ff8787">
+          <video id="video3" muted loop>
+            <source src="IMG_8104.MP4" type="video/mp4">
+          </video>
+        </div>
+      </button>
+      <button class="mood-label red-label">Непонятно</button>
+    </div>
+  </div>
+
+  <div class="stats-box">
+    <h3>📊 Статистика голосов</h3>
+    <div class="stat-item">👍 Понятно: <span id="countClear">0</span></div>
+    <div class="name-list" id="clearList" style="color:#2d5016"></div>
+    
+    <div class="stat-item">🤔 Есть вопросы: <span id="countQuestions">0</span></div>
+    <div class="name-list" id="questionsList" style="color:#6b4e00"></div>
+    
+    <div class="stat-item">😱 Непонятно: <span id="countUnclear">0</span></div>
+    <div class="name-list" id="unclearList" style="color:#8b0000"></div>
+    
+    <div style="margin-top:15px;font-size:20px">
+      Всего голосов: <span id="countTotal">0</span>
+    </div>
+  </div>
+
+  <div class="thank-you" id="thankYou">✅ Спасибо за отзыв! Ты молодец! 🎉</div>
+  
+  <button class="back-btn" id="backBtn">← Вернуться к командам</button>
+</div>
+
+<script>
+
+let teams = [
+  {name:'🥋 Джеки Чан', left:7},
+  {name:'🎬 Уолт Дисней', left:6},
+  {name:'🎼 Бетховен', left:6}
+];
+
+const students = [
+  'Заңғар',
+  'Нұрай',
+  'Ақторғын',
+  'Ақмоншақ',
+  'Жаңылсын',
+  'Арайлым',
+  'Ұлжан',
+  'Қадірберді',
+  'Нұрай',
+  'Рамазан',
+  'Мирас',
+  'Аружан',
+  'Алан',
+  'Әдемі',
+  'Абу Саид',
+  'Қолғанат',
+  'Наурызбек',
+  'Санжар',
+  'Аида'
+];
+
+let currentStudentIndex = 0;
+let teamStudents = [...students];
+let currentTeamIndex = 0;
+
+let voteCounts = {
+  понятно: 0,
+  вопросы: 0,
+  непонятно: 0
+};
+
+let voteDetails = {
+  понятно: [],
+  вопросы: [],
+  непонятно: []
+};
+
+const resultEl = document.getElementById('result');
+const countsEl = document.getElementById('counts');
+const videos = [
+  document.getElementById('video1'),
+  document.getElementById('video2'),
+  document.getElementById('video3')
+];
+
+let ctx;
+let soundOn = true;
+
+function initAudio(){
+  if(!ctx){
+    ctx = new (window.AudioContext||window.webkitAudioContext)();
+  }
+}
+
+function beep(freq=880, duration=0.15){
+  if(!soundOn) return;
+  initAudio();
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+  o.frequency.value = freq;
+  o.type = 'sine';
+  g.gain.setValueAtTime(0.3, ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+  o.connect(g);
+  g.connect(ctx.destination);
+  o.start();
+  o.stop(ctx.currentTime+duration);
+}
+
+function playMelody(){
+  if(!soundOn) return;
+  const notes = [523, 659, 784, 1047];
+  notes.forEach((freq, i) => {
+    setTimeout(() => beep(freq, 0.2), i * 100);
+  });
+}
+
+function applause(){
+  for(let i=0;i<12;i++){
+    setTimeout(()=>{
+      const freq = 200 + Math.random()*600;
+      beep(freq, 0.08);
+    }, i*50);
+  }
+}
+
+function speak(text){
+  if(!soundOn || !window.speechSynthesis) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang='ru-RU';
+  u.rate=1;
+  speechSynthesis.speak(u);
+}
+
+const canvas=document.getElementById('confetti');
+const c=canvas.getContext('2d');
+resize();
+window.onresize=resize;
+let pieces=[];
+
+function resize(){
+  canvas.width=innerWidth;
+  canvas.height=innerHeight;
+}
+
+function confetti(){
+  for(let i=0;i<80;i++){
+    pieces.push({
+      x:Math.random()*canvas.width,
+      y:-10,
+      r:Math.random()*6+4,
+      c:`hsl(${Math.random()*360},100%,50%)`,
+      s:Math.random()*4+2
+    });
+  }
+}
+
+function draw(){
+  c.clearRect(0,0,canvas.width,canvas.height);
+  pieces.forEach(p=>{
+    c.beginPath();
+    c.fillStyle=p.c;
+    c.arc(p.x,p.y,p.r,0,Math.PI*2);
+    c.fill();
+    p.y+=p.s;
+  });
+  pieces=pieces.filter(p=>p.y<canvas.height);
+  requestAnimationFrame(draw);
+}
+draw();
+
+function renderCounts(){
+  countsEl.innerHTML = teams.map(t=>`${t.name}: ${t.left}`).join(' • ');
+}
+
+function updateVoteStats(){
+  document.getElementById('countClear').textContent = voteCounts.понятно;
+  document.getElementById('countQuestions').textContent = voteCounts.вопросы;
+  document.getElementById('countUnclear').textContent = voteCounts.непонятно;
+  document.getElementById('countTotal').textContent = 
+    voteCounts.понятно + voteCounts.вопросы + voteCounts.непонятно;
+  
+  document.getElementById('clearList').textContent = 
+    voteDetails.понятно.length > 0 ? voteDetails.понятно.join(', ') : '';
+  document.getElementById('questionsList').textContent = 
+    voteDetails.вопросы.length > 0 ? voteDetails.вопросы.join(', ') : '';
+  document.getElementById('unclearList').textContent = 
+    voteDetails.непонятно.length > 0 ? voteDetails.непонятно.join(', ') : '';
+}
+
+function stopAllVideos(){
+  videos.forEach(v => {
+    v.pause();
+    v.currentTime = 0;
+  });
+}
+
+function pickTeam(){
+  if(currentTeamIndex >= teamStudents.length){
+    resultEl.textContent='✅ Все распределены!';
+    document.getElementById('currentTeamStudent').textContent = '✅ Все в командах!';
+    return;
+  }
+  
+  const available = teams.filter(t=>t.left>0);
+  if(!available.length){
+    resultEl.textContent='✅ Все распределены!';
+    return;
+  }
+  
+  const studentName = teamStudents[currentTeamIndex];
+  const team = available[Math.floor(Math.random()*available.length)];
+  team.left--;
+
+  beep(659, 0.15);
+  setTimeout(() => beep(784, 0.15), 100);
+  setTimeout(() => playMelody(), 200);
+  applause();
+  speak(`${studentName}, ты в команде ${team.name.replace(/🥋|🎬|🎼/g,'')}`);
+
+  confetti();
+
+  resultEl.textContent=`🎉 ${studentName} в команде: ${team.name}!`;
+  resultEl.classList.remove('pop');
+  void resultEl.offsetWidth;
+  resultEl.classList.add('pop');
+
+  renderCounts();
+  
+  currentTeamIndex++;
+  
+  setTimeout(() => {
+    if(currentTeamIndex < teamStudents.length){
+      document.getElementById('currentTeamStudent').textContent = teamStudents[currentTeamIndex];
+    } else {
+      document.getElementById('currentTeamStudent').textContent = '✅ Все в командах!';
+    }
+  }, 2000);
+}
+
+document.getElementById('bigBtn').onclick=pickTeam;
+
+document.getElementById('resetBtn').onclick=()=>{
+  teams=[
+    {name:'🥋 Джеки Чан', left:7},
+    {name:'🎬 Уолт Дисней', left:6},
+    {name:'🎼 Бетховен', left:6}
+  ];
+  currentTeamIndex = 0;
+  resultEl.textContent='';
+  document.getElementById('currentTeamStudent').textContent = teamStudents[0];
+  renderCounts();
+};
+
+document.getElementById('muteBtn').onclick=function(){
+  soundOn=!soundOn;
+  this.textContent=soundOn?'🔈 Звук':'🔇 Без звука';
+};
+
+renderCounts();
+
+let selectedMood = null;
+let currentVideo = null;
+const emojiButtons = document.querySelectorAll('.mood-card');
+const mainBoard = document.getElementById('mainBoard');
+const reflectionPage = document.getElementById('reflectionPage');
+
+emojiButtons.forEach((btn, index) => {
+  btn.onclick = function(e){
+    e.preventDefault(); 
+    e.stopPropagation(); 
+    
+    if (currentStudentIndex >= students.length) {
+      alert('Все студенты уже проголосовали!');
+      return;
+    }
+    
+    emojiButtons.forEach(b => b.classList.remove('selected'));
+    this.classList.add('selected');
+    selectedMood = this.getAttribute('data-mood');
+    beep(440 + index * 100, 0.1);
+    
+    stopAllVideos();
+    
+    currentVideo = videos[index];
+    currentVideo.play().catch(e => console.log('Видео не может быть воспроизведено:', e));
+    
+    const studentName = students[currentStudentIndex];
+    voteCounts[selectedMood]++;
+    voteDetails[selectedMood].push(studentName);
+    updateVoteStats();
+    
+    console.log('Голос учтён:', selectedMood, '- студент:', studentName);
+    console.log('Текущая статистика:', voteCounts);
+    
+    playMelody();
+    confetti();
+    document.getElementById('thankYou').style.display = 'block';
+    
+    currentStudentIndex++;
+    
+    setTimeout(() => {
+      document.getElementById('thankYou').style.display = 'none';
+      selectedMood = null;
+      emojiButtons.forEach(b => b.classList.remove('selected'));
+      stopAllVideos();
+      
+      if (currentStudentIndex < students.length) {
+        document.getElementById('currentStudentName').textContent = students[currentStudentIndex];
+      } else {
+        document.getElementById('currentStudentName').textContent = '✅ Все проголосовали!';
+      }
+    }, 2000);
+  };
+});
+
+document.getElementById('reflectionBtn').onclick = () => {
+  mainBoard.style.display = 'none';
+  reflectionPage.classList.add('active');
+  beep(523, 0.15);
+  stopAllVideos();
+  
+  if (currentStudentIndex < students.length) {
+    document.getElementById('currentStudentName').textContent = students[currentStudentIndex];
+  } else {
+    document.getElementById('currentStudentName').textContent = '✅ Все проголосовали!';
+  }
+};
+
+document.getElementById('backBtn').onclick = () => {
+  reflectionPage.classList.remove('active');
+  mainBoard.style.display = 'block';
+  stopAllVideos();
+  beep(392, 0.15);
+};
+
+updateVoteStats();
+
+</script>
+</body>
+</html>
