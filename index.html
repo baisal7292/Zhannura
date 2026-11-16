@@ -221,9 +221,9 @@ canvas{
 
 <div class="board" id="mainBoard">
   <h1>Нажми и узнай команду!</h1>
-  <div class="hint">👆 19 учеников → группы будут ровные</div>
-  
-  <div class="current-student" id="currentTeamStudent" style="font-size:28px;margin-bottom:20px">Заңғар</div>
+  <div class="hint" id="hint"></div>
+
+  <div class="current-student" id="currentTeamStudent" style="font-size:28px;margin-bottom:20px"></div>
 
   <div class="button" id="bigBtn">
     <div class="emoji">🎲</div>
@@ -242,12 +242,11 @@ canvas{
 
 <div class="reflection-page" id="reflectionPage">
   <h2>Рефлексия 🌟</h2>
-  <div class="current-student" id="currentStudentName">Заңғар</div>
-  
-  <p style="font-size:20px;margin-bottom:25px;font-weight:bold">Тебе понятно новая тема "Падежи существительных"?
-    
+  <div class="current-student" id="currentStudentName"></div>
+
+  <p style="font-size:20px;margin-bottom:25px;font-weight:bold">Тебе понятна новая тема "Падежи существительных"?
   </p>
-  
+
   <div class="emoji-buttons" id="emojiButtons">
     <div style="text-align:center">
       <button class="mood-card" data-mood="понятно" title="Всё понятно">
@@ -285,52 +284,61 @@ canvas{
     <h3>📊 Статистика голосов</h3>
     <div class="stat-item">👍 Понятно: <span id="countClear">0</span></div>
     <div class="name-list" id="clearList" style="color:#2d5016"></div>
-    
+
     <div class="stat-item">🤔 Есть вопросы: <span id="countQuestions">0</span></div>
     <div class="name-list" id="questionsList" style="color:#6b4e00"></div>
-    
+
     <div class="stat-item">😱 Непонятно: <span id="countUnclear">0</span></div>
     <div class="name-list" id="unclearList" style="color:#8b0000"></div>
-    
+
     <div style="margin-top:15px;font-size:20px">
       Всего голосов: <span id="countTotal">0</span>
     </div>
   </div>
 
   <div class="thank-you" id="thankYou">✅ Спасибо за отзыв! Ты молодец! 🎉</div>
-  
+
   <button class="back-btn" id="backBtn">← Вернуться к командам</button>
 </div>
 
 <script>
 
-let teams = [
-  {name:'🥋 Джеки Чан', left:7},
-  {name:'🎬 Уолт Дисней', left:6},
-  {name:'🎼 Бетховен', left:6}
+const students = [
+  'Ұлжан',
+  'Қайсар',
+  'Назерке',
+  'Ақерке',
+  'Дияс',
+  'Айзере',
+  'Мүслим',
+  'Әдина',
+  'Динара',
+  'Феруза',
+  'Алихан',
+  'Ислам',
+  'Томирис',
+  'Әсима',
+  'Раяна',
+  'Қайнар',
+  'Аида',
+  'Ақназар',
+  'Мәнер',
+  'Бағдат',
+  'Қасиет',
+  'Жанерке',
+  'Мирас'
 ];
 
-const students = [
-  'Заңғар',
-  'Нұрай',
-  'Ақторғын',
-  'Ақмоншақ',
-  'Жаңылсын',
-  'Арайлым',
-  'Ұлжан',
-  'Қадірберді',
-  'Нұрай',
-  'Рамазан',
-  'Мирас',
-  'Аружан',
-  'Алан',
-  'Әдемі',
-  'Абу Саид',
-  'Қолғанат',
-  'Наурызбек',
-  'Санжар',
-  'Аида'
-];
+const teamNames = ['♟️ Шахмат', '🦴 Асык', '⚫ Го'];
+
+// размеры команд считаются автоматически (23 → 8, 8, 7)
+function makeTeams(){
+  const base = Math.floor(students.length / teamNames.length);
+  const extra = students.length % teamNames.length;
+  return teamNames.map((name, i) => ({name, left: base + (i < extra ? 1 : 0)}));
+}
+
+let teams = makeTeams();
 
 let currentStudentIndex = 0;
 let teamStudents = [...students];
@@ -355,6 +363,11 @@ const videos = [
   document.getElementById('video2'),
   document.getElementById('video3')
 ];
+
+document.getElementById('hint').textContent =
+  `👆 ${students.length} учеников → группы будут ровные`;
+document.getElementById('currentTeamStudent').textContent = teamStudents[0];
+document.getElementById('currentStudentName').textContent = students[0];
 
 let ctx;
 let soundOn = true;
@@ -450,14 +463,14 @@ function updateVoteStats(){
   document.getElementById('countClear').textContent = voteCounts.понятно;
   document.getElementById('countQuestions').textContent = voteCounts.вопросы;
   document.getElementById('countUnclear').textContent = voteCounts.непонятно;
-  document.getElementById('countTotal').textContent = 
+  document.getElementById('countTotal').textContent =
     voteCounts.понятно + voteCounts.вопросы + voteCounts.непонятно;
-  
-  document.getElementById('clearList').textContent = 
+
+  document.getElementById('clearList').textContent =
     voteDetails.понятно.length > 0 ? voteDetails.понятно.join(', ') : '';
-  document.getElementById('questionsList').textContent = 
+  document.getElementById('questionsList').textContent =
     voteDetails.вопросы.length > 0 ? voteDetails.вопросы.join(', ') : '';
-  document.getElementById('unclearList').textContent = 
+  document.getElementById('unclearList').textContent =
     voteDetails.непонятно.length > 0 ? voteDetails.непонятно.join(', ') : '';
 }
 
@@ -474,13 +487,13 @@ function pickTeam(){
     document.getElementById('currentTeamStudent').textContent = '✅ Все в командах!';
     return;
   }
-  
+
   const available = teams.filter(t=>t.left>0);
   if(!available.length){
     resultEl.textContent='✅ Все распределены!';
     return;
   }
-  
+
   const studentName = teamStudents[currentTeamIndex];
   const team = available[Math.floor(Math.random()*available.length)];
   team.left--;
@@ -489,7 +502,8 @@ function pickTeam(){
   setTimeout(() => beep(784, 0.15), 100);
   setTimeout(() => playMelody(), 200);
   applause();
-  speak(`${studentName}, ты в команде ${team.name.replace(/🥋|🎬|🎼/g,'')}`);
+  // убираем эмодзи из названия команды для озвучки
+  speak(`${studentName}, ты в команде ${team.name.replace(/[^\p{L}\s]/gu,'').trim()}`);
 
   confetti();
 
@@ -499,9 +513,9 @@ function pickTeam(){
   resultEl.classList.add('pop');
 
   renderCounts();
-  
+
   currentTeamIndex++;
-  
+
   setTimeout(() => {
     if(currentTeamIndex < teamStudents.length){
       document.getElementById('currentTeamStudent').textContent = teamStudents[currentTeamIndex];
@@ -514,11 +528,7 @@ function pickTeam(){
 document.getElementById('bigBtn').onclick=pickTeam;
 
 document.getElementById('resetBtn').onclick=()=>{
-  teams=[
-    {name:'🥋 Джеки Чан', left:7},
-    {name:'🎬 Уолт Дисней', left:6},
-    {name:'🎼 Бетховен', left:6}
-  ];
+  teams = makeTeams();
   currentTeamIndex = 0;
   resultEl.textContent='';
   document.getElementById('currentTeamStudent').textContent = teamStudents[0];
@@ -540,44 +550,41 @@ const reflectionPage = document.getElementById('reflectionPage');
 
 emojiButtons.forEach((btn, index) => {
   btn.onclick = function(e){
-    e.preventDefault(); 
-    e.stopPropagation(); 
-    
+    e.preventDefault();
+    e.stopPropagation();
+
     if (currentStudentIndex >= students.length) {
       alert('Все студенты уже проголосовали!');
       return;
     }
-    
+
     emojiButtons.forEach(b => b.classList.remove('selected'));
     this.classList.add('selected');
     selectedMood = this.getAttribute('data-mood');
     beep(440 + index * 100, 0.1);
-    
+
     stopAllVideos();
-    
+
     currentVideo = videos[index];
     currentVideo.play().catch(e => console.log('Видео не может быть воспроизведено:', e));
-    
+
     const studentName = students[currentStudentIndex];
     voteCounts[selectedMood]++;
     voteDetails[selectedMood].push(studentName);
     updateVoteStats();
-    
-    console.log('Голос учтён:', selectedMood, '- студент:', studentName);
-    console.log('Текущая статистика:', voteCounts);
-    
+
     playMelody();
     confetti();
     document.getElementById('thankYou').style.display = 'block';
-    
+
     currentStudentIndex++;
-    
+
     setTimeout(() => {
       document.getElementById('thankYou').style.display = 'none';
       selectedMood = null;
       emojiButtons.forEach(b => b.classList.remove('selected'));
       stopAllVideos();
-      
+
       if (currentStudentIndex < students.length) {
         document.getElementById('currentStudentName').textContent = students[currentStudentIndex];
       } else {
@@ -592,7 +599,7 @@ document.getElementById('reflectionBtn').onclick = () => {
   reflectionPage.classList.add('active');
   beep(523, 0.15);
   stopAllVideos();
-  
+
   if (currentStudentIndex < students.length) {
     document.getElementById('currentStudentName').textContent = students[currentStudentIndex];
   } else {
